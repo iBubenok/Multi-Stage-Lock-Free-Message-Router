@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # Основной сервис для запуска тестов
+  router-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: message-router:latest
+    container_name: router-test
+    volumes:
+      - ./results:/app/results
+      - ./configs:/app/configs:ro
+    command: configs/baseline.json
+    # Ограничения ресурсов (настраиваются по необходимости)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+    # Настройки для производительности
+    environment:
+      - OMP_NUM_THREADS=4
+      - OMP_PROC_BIND=true
+    # Приоритет CPU
+    cpu_shares: 1024
+    # Отключение swap для стабильной производительности
+    mem_swappiness: 0
+
+  # Сервис для запуска бенчмарков очередей
+  queue-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: message-router:latest
+    container_name: queue-benchmark
+    volumes:
+      - ./results/benchmarks:/app/results
+    entrypoint: ["./queue_benchmark"]
+    command: ["--benchmark_out=/app/results/queue_benchmark.json", "--benchmark_out_format=json"]
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+
+  # Сервис для запуска бенчмарков роутинга
+  routing-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: message-router:latest
+    container_name: routing-benchmark
+    volumes:
+      - ./results/benchmarks:/app/results
+    entrypoint: ["./routing_benchmark"]
+    command: ["--benchmark_out=/app/results/routing_benchmark.json", "--benchmark_out_format=json"]
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+
+  # Сервис для запуска бенчмарков памяти
+  memory-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: message-router:latest
+    container_name: memory-benchmark
+    volumes:
+      - ./results/benchmarks:/app/results
+    entrypoint: ["./memory_benchmark"]
+    command: ["--benchmark_out=/app/results/memory_benchmark.json", "--benchmark_out_format=json"]
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+
+  # Сервис для запуска бенчмарков масштабирования
+  scaling-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: message-router:latest
+    container_name: scaling-benchmark
+    volumes:
+      - ./results/benchmarks:/app/results
+    entrypoint: ["./scaling_benchmark"]
+    command: ["--benchmark_out=/app/results/scaling_benchmark.json", "--benchmark_out_format=json"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 4G
+
+  # Сервис для запуска всех бенчмарков
+  all-benchmarks:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: message-router:latest
+    container_name: all-benchmarks
+    volumes:
+      - ./results/benchmarks:/app/results
+      - ./scripts:/app/scripts:ro
+    entrypoint: ["/bin/bash"]
+    command:
+      - -c
+      - |
+        echo "Запуск всех бенчмарков..."
+        ./queue_benchmark --benchmark_out=/app/results/queue_benchmark.json --benchmark_out_format=json
+        ./routing_benchmark --benchmark_out=/app/results/routing_benchmark.json --benchmark_out_format=json
+        ./memory_benchmark --benchmark_out=/app/results/memory_benchmark.json --benchmark_out_format=json
+        ./scaling_benchmark --benchmark_out=/app/results/scaling_benchmark.json --benchmark_out_format=json
+        echo "Все бенчмарки завершены!"
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 4G

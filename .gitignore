@@ -1,0 +1,157 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+router_test
+queue_benchmark
+routing_benchmark
+memory_benchmark
+scaling_benchmark
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+*.cmake
+
+# Results and logs
+results/
+*.log
+*.txt
+output/
+logs/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+
+# CLion
+cmake-build-debug/
+cmake-build-release/
+
+# Qt Creator
+*.pro.user
+*.autosave
+
+# Emacs
+\#*\#
+.\#*
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker volumes (results mounted from container)
+volumes/
+
+# Core dumps (but not src/core/ directory)
+/core
+core.*
+*.core
+
+# Valgrind
+*.memcheck
+vgcore.*
+
+# GDB
+.gdb_history
+
+# Performance profiling
+perf.data
+perf.data.old
+*.prof
+*.perf
+
+# Coverage
+*.gcov
+*.gcda
+*.gcno
+coverage/
+htmlcov/
+
+# Doxygen documentation (if generated)
+docs/html/
+docs/latex/
+
+# Benchmark results (local runs)
+benchmark_results/
+*.benchmark
+
+# Package manager artifacts (if used)
+conan/
+vcpkg_installed/
+
+# Python (for scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/

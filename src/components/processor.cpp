@@ -47,7 +47,8 @@ void Processor::run(std::atomic<bool>& running) {
             msg.processing_ts_ns = msg.processing_exit_ns;
 
             // Попытка отправить в выходную очередь
-            while (running.load(std::memory_order_relaxed)) {
+            // ВАЖНО: продолжаем пытаться отправить даже если running==false
+            while (true) {
                 if (output_queue_->try_push(msg)) {
                     stats_.messages_processed.fetch_add(1, std::memory_order_relaxed);
                     break;

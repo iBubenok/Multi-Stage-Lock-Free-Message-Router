@@ -45,12 +45,15 @@ void SystemStatistics::print_current_stats(double elapsed_secs) const {
     std::cout << "]" << std::endl;
 
     // Задержки (если есть данные)
-    if (!total_latencies.latencies.empty()) {
-        std::cout << "        Задержки(μs) - "
-                  << "Stage1: " << std::setprecision(2) << stage1_latencies.p50() << " | "
-                  << "Processing: " << processing_latencies.p50() << " | "
-                  << "Stage2: " << stage2_latencies.p50() << " | "
-                  << "Total: " << total_latencies.p50() << std::endl;
+    {
+        std::lock_guard<std::mutex> lock(latency_mutex);
+        if (!total_latencies.latencies.empty()) {
+            std::cout << "        Задержки(μs) - "
+                      << "Stage1: " << std::setprecision(2) << stage1_latencies.p50() << " | "
+                      << "Processing: " << processing_latencies.p50() << " | "
+                      << "Stage2: " << stage2_latencies.p50() << " | "
+                      << "Total: " << total_latencies.p50() << std::endl;
+        }
     }
 }
 
@@ -81,26 +84,29 @@ void SystemStatistics::print_final_report(const std::string& scenario, double du
     std::cout << std::endl;
 
     // Перцентили задержек
-    if (!total_latencies.latencies.empty()) {
-        std::cout << "Перцентили задержек (микросекунды):" << std::endl;
-        std::cout << "  Этап        p50     p90     p99    p99.9   max" << std::endl;
+    {
+        std::lock_guard<std::mutex> lock(latency_mutex);
+        if (!total_latencies.latencies.empty()) {
+            std::cout << "Перцентили задержек (микросекунды):" << std::endl;
+            std::cout << "  Этап        p50     p90     p99    p99.9   max" << std::endl;
 
-        auto print_latency_row = [](const std::string& name, const LatencyStats& stats) {
-            std::cout << "  " << std::setw(10) << std::left << name
-                      << std::right << std::fixed << std::setprecision(2)
-                      << std::setw(7) << stats.p50()
-                      << std::setw(8) << stats.p90()
-                      << std::setw(8) << stats.p99()
-                      << std::setw(8) << stats.p999()
-                      << std::setw(8) << stats.max()
-                      << std::endl;
-        };
+            auto print_latency_row = [](const std::string& name, const LatencyStats& stats) {
+                std::cout << "  " << std::setw(10) << std::left << name
+                          << std::right << std::fixed << std::setprecision(2)
+                          << std::setw(7) << stats.p50()
+                          << std::setw(8) << stats.p90()
+                          << std::setw(8) << stats.p99()
+                          << std::setw(8) << stats.p999()
+                          << std::setw(8) << stats.max()
+                          << std::endl;
+            };
 
-        print_latency_row("Stage1", stage1_latencies);
-        print_latency_row("Process", processing_latencies);
-        print_latency_row("Stage2", stage2_latencies);
-        print_latency_row("Total", total_latencies);
-        std::cout << std::endl;
+            print_latency_row("Stage1", stage1_latencies);
+            print_latency_row("Process", processing_latencies);
+            print_latency_row("Stage2", stage2_latencies);
+            print_latency_row("Total", total_latencies);
+            std::cout << std::endl;
+        }
     }
 
     // Проверка порядка

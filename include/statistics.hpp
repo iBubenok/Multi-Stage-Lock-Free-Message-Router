@@ -55,9 +55,12 @@ struct OrderTracker {
     std::map<uint8_t, uint64_t> last_sequence;  // Последний seq_num для каждого типа
     std::atomic<uint64_t> messages_received{0};
     std::atomic<uint64_t> order_violations{0};
+    std::mutex tracker_mutex;  // Защита last_sequence от race condition
 
     void track(const Message& msg) {
         messages_received.fetch_add(1, std::memory_order_relaxed);
+
+        std::lock_guard<std::mutex> lock(tracker_mutex);
 
         uint8_t key = msg.msg_type;
         auto it = last_sequence.find(key);
@@ -101,8 +104,8 @@ public:
     // Отслеживание порядка для каждого производителя (используем unique_ptr чтобы избежать проблем с move)
     std::vector<std::unique_ptr<OrderTracker>> producer_order_trackers;
 
-    // Мьютекс для защиты latency stats (только для add)
-    std::mutex latency_mutex;
+    // Мьютекс для защиты latency stats (mutable для использования в const методах)
+    mutable std::mutex latency_mutex;
 
     SystemStatistics(size_t num_producers, size_t num_processors, size_t num_strategies) {
         // Используем unique_ptr для атомиков чтобы избежать проблем с move
@@ -121,8 +124,14 @@ public:
 
     /**
      * Добавление информации о задержке из обработанного сообщения
+     * Используется sampling для снижения contention на мьютексе
      */
     void record_message_latencies(const Message& msg) {
+        // Sampling: записываем только каждое 1000-е сообщение для снижения overhead
+        if (msg.sequence_number % 1000 != 0) {
+            return;
+        }
+
         std::lock_guard<std::mutex> lock(latency_mutex);
 
         stage1_latencies.add(msg.stage1_latency_us());

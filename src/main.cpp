@@ -210,6 +210,32 @@ int main(int argc, char* argv[]) {
         std::cout << "\nОстановка системы..." << std::endl;
         g_running.store(false, std::memory_order_release);
 
+        // Ждем пока все сообщения будут обработаны (максимум 60 секунд)
+        // Делаем это ДО join потоков, чтобы они продолжали дренировать очереди
+        std::cout << "Ожидание обработки оставшихся сообщений..." << std::endl;
+        bool all_processed = false;
+        for (int i = 0; i < 120; ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+            uint64_t produced = stats.messages_produced.load(std::memory_order_relaxed);
+            uint64_t delivered = stats.messages_delivered.load(std::memory_order_relaxed);
+
+            if (produced == delivered) {
+                std::cout << "Все сообщения обработаны." << std::endl;
+                all_processed = true;
+                break;
+            }
+
+            if (i % 4 == 0) {  // Каждые 2 секунды
+                std::cout << "  Ожидание... (произведено: " << produced
+                          << ", доставлено: " << delivered << ")" << std::endl;
+            }
+        }
+
+        if (!all_processed) {
+            std::cout << "Таймаут ожидания. Завершаем принудительно." << std::endl;
+        }
+
         // Ожидание завершения всех потоков
         for (auto& thread : threads) {
             if (thread.joinable()) {
@@ -220,9 +246,6 @@ int main(int argc, char* argv[]) {
         double final_duration = global_timer.elapsed_seconds();
 
         // ========== Финальный отчет ==========
-
-        std::cout << "\nОжидание обработки оставшихся сообщений..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         stats.print_final_report(config.scenario, final_duration);
 

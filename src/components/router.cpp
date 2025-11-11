@@ -47,7 +47,9 @@ void Stage1Router::run(std::atomic<bool>& running) {
                 uint8_t processor_id = select_processor(msg.msg_type);
 
                 // Попытка отправить в выходную очередь
-                while (running.load(std::memory_order_relaxed)) {
+                // ВАЖНО: продолжаем пытаться отправить даже если running==false,
+                // чтобы не потерять сообщение, которое уже извлекли из входной очереди
+                while (true) {
                     msg.stage1_exit_ns = Message::get_timestamp_ns();
 
                     if (output_queues_[processor_id]->try_push(msg)) {
@@ -57,6 +59,7 @@ void Stage1Router::run(std::atomic<bool>& running) {
 
                     // Если очередь полная, активно ждем (busy-wait)
                     // Это минимизирует задержку
+                    __builtin_ia32_pause();
                 }
             }
         }
@@ -101,7 +104,8 @@ void Stage2Router::run(std::atomic<bool>& running) {
                     : (msg.msg_type % static_cast<uint8_t>(output_queues_.size()));
 
                 // Попытка отправить в выходную очередь
-                while (running.load(std::memory_order_relaxed)) {
+                // ВАЖНО: продолжаем пытаться отправить даже если running==false
+                while (true) {
                     msg.stage2_exit_ns = Message::get_timestamp_ns();
 
                     if (output_queues_[strategy_id]->try_push(msg)) {
